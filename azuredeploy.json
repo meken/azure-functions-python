@@ -1,0 +1,150 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "String used as a base for naming resources (6 alphanumeric characters or less).  A unique hash is prepended to the string for some resources, while resource-specific information is appended."
+      },
+      "minLength": 1,
+      "maxLength": 6
+    }
+  },
+  "variables": {
+    "namingInfix": "[toLower(substring(concat(parameters('namePrefix'), uniqueString(resourceGroup().id)), 0, 9))]",
+    "location": "[resourceGroup().location]",
+    "docDbName": "[concat(variables('namingInfix'), 'db')]",
+    "funcName": "[concat(variables('namingInfix'), 'func')]",
+    "funcStorageAccountName": "[concat(variables('namingInfix'), 'funcsa')]",
+    "funcHostingPlanName": "[concat(variables('namingInfix'), 'asp')]",
+    "funcStorageAccountType": "Standard_LRS",
+    "funcSku": "Standard",
+    "funcWorkerSize": "0",
+    "pythonExtension": "python2713x64",
+    "repoUrl": "https://github.com/meken/azure-functions-python.git",
+    "repoBranch": "master"
+  },
+  "resources": [
+    {
+      "name": "[variables('docDbName')]",
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2015-04-08",
+      "location": "[variables('location')]",
+      "kind": "GlobalDocumentDB",
+      "tags": {},
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session",
+          "maxIntervalInSeconds": 5,
+          "maxStalenessPrefix": 100
+        },
+        "name": "[variables('docDbName')]"
+      },
+      "dependsOn": []
+    },
+    {
+      "name": "[variables('funcStorageAccountName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[variables('location')]",
+      "properties": {
+        "accountType": "[variables('funcStorageAccountType')]"
+      }
+    },
+    {
+      "name": "[variables('funcHostingPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2015-04-01",
+      "location": "[variables('location')]",
+      "properties": {
+        "name": "[variables('funcHostingPlanName')]",
+        "sku": "[variables('funcSku')]",
+        "workerSize": "[variables('funcWorkerSize')]",
+        "hostingEnvironment": "",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "name": "[variables('funcName')]",
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2016-08-01",
+      "location": "[variables('location')]",
+      "kind": "functionapp",
+      "properties": {
+        "name": "[variables('funcName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('funcHostingPlanName'))]",
+        "hostingEnvironment": "",
+        "clientAffinityEnabled": false,
+        "siteConfig": {
+          "alwaysOn": true,
+          "cors": {
+            "allowedOrigins": [
+              "*"
+            ]
+          },
+          "handlerMappings": [
+            {
+              "arguments": "D:\\home\\Python27\\wfastcgi.py",
+              "extension": "fastCgi",
+              "scriptProcessor": "D:\\home\\Python27\\python.exe"
+            }
+          ],
+          "appSettings": [
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~1"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName')), '2015-05-01-preview').key1,';')]"
+            },
+            {
+              "name": "AzureWebJobsDashboard",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName')), '2015-05-01-preview').key1,';')]"
+            },
+            {
+              "name": "DOCDB_HOST",
+              "value": "[concat('https://',variables('docDbName'),'.documents.azure.com:443/')]"
+            },
+            {
+              "name": "DOCDB_KEY",
+              "value": "[listkeys(variables('docDbName'), '2015-04-08').primaryMasterKey]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "name": "[variables('pythonExtension')",
+          "type": "siteextensions",
+          "apiVersion": "2016-08-01",
+          "properties": {},
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('funcName'))]"
+          ]
+        },
+        {
+          "name": "web",
+          "type": "sourcecontrols",
+          "apiVersion": "2015-08-01",
+          "properties": {
+            "repoUrl": "[variables('repoUrl')]",
+            "branch": "[variables('repoBranch')]",
+            "isManualIntegration": true
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', variables('funcName'))]",
+            "[resourceId('Microsoft.Web/sites/siteextensions', variables('funcName'), variables('pythonExtension'))]"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('funcHostingPlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('docDbName'))]"
+      ]
+    }
+  ]
+}
