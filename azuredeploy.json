@@ -117,7 +117,7 @@
       },
       "resources": [
         {
-          "name": "[variables('pythonExtension')",
+          "name": "[variables('pythonExtension')]",
           "type": "siteextensions",
           "apiVersion": "2016-08-01",
           "properties": {},
