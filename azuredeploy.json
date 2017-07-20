@@ -17,10 +17,9 @@
     "docDbName": "[concat(variables('namingInfix'), 'db')]",
     "funcName": "[concat(variables('namingInfix'), 'func')]",
     "funcStorageAccountName": "[concat(variables('namingInfix'), 'funcsa')]",
+    "funcStorageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName'))]",
     "funcHostingPlanName": "[concat(variables('namingInfix'), 'asp')]",
     "funcStorageAccountType": "Standard_LRS",
-    "funcSku": "Standard",
-    "funcWorkerSize": "0",
     "pythonExtension": "python2713x64",
     "repoUrl": "https://github.com/meken/azure-functions-python.git",
     "repoBranch": "master"
@@ -60,30 +59,20 @@
       "location": "[variables('location')]",
       "properties": {
         "name": "[variables('funcHostingPlanName')]",
-        "sku": "[variables('funcSku')]",
-        "workerSize": "[variables('funcWorkerSize')]",
-        "hostingEnvironment": "",
-        "numberOfWorkers": 1
+        "sku": "Dynamic",
+        "computeMode": "Dynamic"
       }
     },
     {
       "name": "[variables('funcName')]",
       "type": "Microsoft.Web/sites",
-      "apiVersion": "2016-08-01",
+      "apiVersion": "2015-08-01",
       "location": "[variables('location')]",
       "kind": "functionapp",
       "properties": {
         "name": "[variables('funcName')]",
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('funcHostingPlanName'))]",
-        "hostingEnvironment": "",
-        "clientAffinityEnabled": false,
         "siteConfig": {
-          "alwaysOn": true,
-          "cors": {
-            "allowedOrigins": [
-              "*"
-            ]
-          },
           "handlerMappings": [
             {
               "arguments": "D:\\home\\Python27\\wfastcgi.py",
@@ -97,12 +86,20 @@
               "value": "~1"
             },
             {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(variables('funcName'))]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(variables('funcStorageAccountId'),'2015-05-01-preview').key1)]"
+            },
+            {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName')), '2015-05-01-preview').key1,';')]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(variables('funcStorageAccountId'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "AzureWebJobsDashboard",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('funcStorageAccountName')), '2015-05-01-preview').key1,';')]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('funcStorageAccountName'),';AccountKey=',listkeys(variables('funcStorageAccountId'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "DOCDB_HOST",
