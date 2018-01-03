@@ -19,6 +19,6 @@ repository = docdb.Repository(os.environ["DOCDB_HOST"], os.environ["DOCDB_KEY"])
 if not details.has_key("email"):
     details["email"] = "%s@outlook.com" % uuid.uuid4()
 
-print "Storing the contact details in Azure Document DB"
+print("Storing the contact details in Azure Document DB")
 doc = repository.insert(details)
-print "Repository returned %s" % doc
+print("Repository returned %s" % doc)

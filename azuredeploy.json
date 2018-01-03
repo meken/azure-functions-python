@@ -21,9 +21,9 @@
     "funcStorageAccountType": "Standard_LRS",
     "funcSku": "Standard",
     "funcWorkerSize": "0",
-    "pythonExtension": "python2713x64",
+    "pythonExtension": "python361x64",
     "repoUrl": "https://github.com/meken/azure-functions-python.git",
-    "repoBranch": "master"
+    "repoBranch": "python3"
   },
   "resources": [
     {
@@ -86,9 +86,9 @@
           },
           "handlerMappings": [
             {
-              "arguments": "D:\\home\\Python27\\wfastcgi.py",
+              "arguments": "D:\\home\\python361x64\\wfastcgi.py",
               "extension": "fastCgi",
-              "scriptProcessor": "D:\\home\\Python27\\python.exe"
+              "scriptProcessor": "D:\\home\\python361x64\\python.exe"
             }
           ],
           "appSettings": [
