@@ -1,3 +1,8 @@
+### Update 2018-09-24
+The latest version for Azure Functions v2 has better support for Python 3.6+ and package management, have a look at the [docs](https://github.com/Azure/azure-functions-python-worker/wiki/Developer-Guide) to learn more about it.
+
+---
+
 At the time of this writing Python has experimental support
 on Azure Functions. Although it's possible to get things
 working, the required information is scattered over 
